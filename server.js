@@ -41,21 +41,21 @@ app.post(
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.error("❌ Erro no webhook:", err.message);
+      console.error("Erro no webhook:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     switch (event.type) {
       case "checkout.session.completed":
-        console.log("✅ Pagamento confirmado");
+        console.log("Pagamento confirmado");
         break;
 
       case "invoice.payment_failed":
-        console.log("⚠️ Pagamento falhou");
+        console.log("Pagamento falhou");
         break;
 
       case "charge.refunded":
-        console.log("💸 Reembolso emitido");
+        console.log("Reembolso emitido");
         break;
 
       default:
