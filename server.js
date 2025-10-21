@@ -27,4 +27,43 @@ app.post("/create-checkout-session", async (req, res) => {
   }
 });
 
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error("❌ Erro no webhook:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    switch (event.type) {
+      case "checkout.session.completed":
+        console.log("✅ Pagamento confirmado");
+        break;
+
+      case "invoice.payment_failed":
+        console.log("⚠️ Pagamento falhou");
+        break;
+
+      case "charge.refunded":
+        console.log("💸 Reembolso emitido");
+        break;
+
+      default:
+        console.log(`Evento não tratado: ${event.type}`);
+    }
+
+    res.status(200).send("Webhook recebido!");
+  }
+);
+
 app.listen(10000, () => console.log("Servidor Stripe ativo na porta 10000"));
