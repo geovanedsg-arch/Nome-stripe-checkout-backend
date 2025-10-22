@@ -66,4 +66,69 @@ app.post(
   }
 );
 
+import express from "express";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+
+const app = express();
+app.use(express.json());
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("Erro ao validar webhook:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const email = session.customer_details.email;
+
+      const { error } = await supabase
+        .from("users")
+        .update({ status_vip: true })
+        .eq("email", email);
+
+      if (error) console.error("Erro ao liberar VIP:", error);
+      else console.log(`Acesso VIP liberado para ${email}`);
+    }
+
+    if (["invoice.payment_failed", "customer.subscription.deleted"].includes(event.type)) {
+      const session = event.data.object;
+      const email = session.customer_email || session.customer_details?.email;
+
+      const { error } = await supabase
+        .from("users")
+        .update({ status_vip: false })
+        .eq("email", email);
+
+      if (error) console.error("Erro ao remover VIP:", error);
+      else console.log(`Acesso VIP removido de ${email}`);
+    }
+
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error("Erro no processamento do webhook:", err);
+    res.status(500).send("Erro interno");
+  }
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`Servidor ativo na porta ${PORT}`));
+
 app.listen(10000, () => console.log("Servidor Stripe ativo na porta 10000"));
