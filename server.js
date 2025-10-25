@@ -118,5 +118,27 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   }
 });
 
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.log('Erro no webhook:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    await supabase
+      .from('usuarios')
+      .update({ status_assinatura: 'ativa' })
+      .eq('email', session.customer_email);
+  }
+
+  res.json({ received: true });
+});
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
