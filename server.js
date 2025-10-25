@@ -32,7 +32,7 @@ app.post("/create-checkout-session", async (req, res) => {
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error("❌ Erro ao criar checkout:", error);
+    console.error("Erro ao criar checkout:", error);
     res.status(500).json({ error: "Erro ao criar sessão de checkout" });
   }
 });
@@ -44,7 +44,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("⚠️ Erro no webhook:", err.message);
+    console.error("Erro no webhook:", err.message);
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
@@ -63,7 +63,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
             data_inicio: new Date().toISOString(),
           });
 
-        console.log("✅ Assinatura confirmada:", email);
+        console.log("Assinatura confirmada:", email);
         break;
       }
 
@@ -76,7 +76,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           .update({ status: "pagamento_falhou" })
           .eq("email", email);
 
-        console.log("⚠️ Pagamento falhou:", email);
+        console.log("Pagamento falhou:", email);
         break;
       }
 
@@ -90,7 +90,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           .update({ status: "cancelado" })
           .eq("email", email);
 
-        console.log("❌ Assinatura cancelada:", email);
+        console.log("Assinatura cancelada:", email);
         break;
       }
 
@@ -103,7 +103,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           .update({ status: "reembolsado" })
           .eq("email", email);
 
-        console.log("💸 Reembolso feito para:", email);
+        console.log("Reembolso feito para:", email);
         break;
       }
 
@@ -119,4 +119,4 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
